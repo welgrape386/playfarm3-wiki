@@ -11,7 +11,12 @@ const navItems = [
   { label: "꾸미기", href: "/lifestyle" },
   { label: "도움말", href: "/help" },
   { label: "상점가 계산", href: "/calculator", highlight: true },
-  { label: "요리 수익", href: "/cooking-calc", highlight: true, highlightColor: "orange" },
+  {
+    label: "요리 수익",
+    href: "/cooking-calc",
+    highlight: true,
+    highlightColor: "orange",
+  },
 ];
 
 export function Header() {
@@ -50,11 +55,21 @@ export function Header() {
               <Sprout className="w-4 h-4 text-white" />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-sky-600" style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "-0.3px" }}>
+              <span
+                className="text-sky-600"
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 800,
+                  letterSpacing: "-0.3px",
+                }}
+              >
                 플레이팜3
               </span>
-              <span className="text-slate-400" style={{ fontSize: "9px", fontWeight: 400 }}>
-                공식 위키
+              <span
+                className="text-slate-400"
+                style={{ fontSize: "9px", fontWeight: 400 }}
+              >
+                비공식 위키
               </span>
             </div>
           </Link>
@@ -75,15 +90,20 @@ export function Header() {
                           ? "bg-orange-400 text-white shadow-sm"
                           : "bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200"
                         : active
-                        ? "bg-amber-400 text-white shadow-sm"
-                        : "bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200"
+                          ? "bg-amber-400 text-white shadow-sm"
+                          : "bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200"
                       : active
-                      ? "bg-sky-100 text-sky-700"
-                      : "text-slate-600 hover:text-sky-600 hover:bg-sky-50"
+                        ? "bg-sky-100 text-sky-700"
+                        : "text-slate-600 hover:text-sky-600 hover:bg-sky-50"
                   }`}
-                  style={{ fontSize: "13px", fontWeight: item.highlight ? 700 : 500 }}
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: item.highlight ? 700 : 500,
+                  }}
                 >
-                  {item.highlight && <span className="mr-1">{isOrange ? "🍳" : "💰"}</span>}
+                  {item.highlight && (
+                    <span className="mr-1">{isOrange ? "🍳" : "💰"}</span>
+                  )}
                   {item.label}
                 </Link>
               );
@@ -95,7 +115,11 @@ export function Header() {
             className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-sky-50 transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>
@@ -112,8 +136,8 @@ export function Header() {
                   item.highlight
                     ? "bg-amber-50 text-amber-600 border border-amber-200"
                     : isActive(item.href)
-                    ? "bg-sky-50 text-sky-700"
-                    : "text-slate-600 hover:bg-slate-50"
+                      ? "bg-sky-50 text-sky-700"
+                      : "text-slate-600 hover:bg-slate-50"
                 }`}
                 style={{ fontSize: "14px", fontWeight: 500 }}
               >
