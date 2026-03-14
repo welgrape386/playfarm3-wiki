@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import islandImg from "figma:asset/8bb957ea6efb20ba9ce11fc56982193b938c42b2.png";
 
 type Step = "notice" | "island";
 
@@ -131,7 +130,7 @@ export function WelcomePopup() {
           {/* 이미지 */}
           <div>
             <img
-              src={islandImg}
+              src="/island.png"
               alt="청포도 섬"
               className="w-full object-cover"
               style={{ maxHeight: "280px", objectPosition: "center" }}
