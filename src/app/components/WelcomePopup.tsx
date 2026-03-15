@@ -31,6 +31,12 @@ export function WelcomePopup() {
     setStep("island");
   };
 
+  // 1번 팝업 X → 2번 팝업으로 이동 (건너뜀)
+  const handleNoticeClose = () => {
+    setStep("island");
+  };
+
+  // 2번 팝업 X → 완전히 닫기
   const handleClose = () => {
     saveDontShowToday();
     setStep(null);
@@ -48,14 +54,19 @@ export function WelcomePopup() {
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center px-4"
       style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(3px)" }}
-      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          if (step === "notice") handleNoticeClose();
+          else handleClose();
+        }
+      }}
     >
       {/* ── 팝업 1: 비공식 위키 안내 ── */}
       {step === "notice" && (
         <div className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl bg-white">
           {/* 닫기 */}
           <button
-            onClick={handleClose}
+            onClick={handleNoticeClose}
             className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
           >
             <X className="w-4 h-4 text-slate-500" />

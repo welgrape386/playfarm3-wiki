@@ -14,10 +14,10 @@ export function Footer() {
               </div>
               <div>
                 <div className="text-white" style={{ fontSize: "15px", fontWeight: 700 }}>
-                  플레이팜3 위키
+                  플레이팜3 비공식 위키
                 </div>
                 <div className="text-slate-500" style={{ fontSize: "11px" }}>
-                  PlayFarm3 Official Wiki
+                  PlayFarm3 Unofficial Wiki
                 </div>
               </div>
             </div>
@@ -64,12 +64,11 @@ export function Footer() {
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="text-slate-600" style={{ fontSize: "12px" }}>
-            © 2026 플레이팜3 위키. 비공식 팬 위키입니다.
+            © 2026 플레이팜3 비공식 위키. 팬 제작 비공식 사이트입니다.
           </span>
           <div className="flex items-center gap-1.5 text-slate-600" style={{ fontSize: "12px" }}>
-            <span>Made with</span>
+            <span>플레이팜3 유저들을 위해 제작되었어요</span>
             <Heart className="w-3 h-3 text-rose-400 fill-rose-400" />
-            <span>for PlayFarm3 players</span>
           </div>
         </div>
       </div>
