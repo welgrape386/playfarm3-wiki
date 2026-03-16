@@ -41,7 +41,7 @@ const MATERIALS: Material[] = [
   { id: "can_cocoa",    emoji: "🥫", name: "코코아콩 통조림",    basePrice: 65910,  type: "can", displayUnit: "개" },
   { id: "can_sugar",    emoji: "🥫", name: "설탕 통조림",        basePrice: 67470,  type: "can", displayUnit: "개" },
   { id: "can_beet",     emoji: "🥫", name: "사탕무 통조림",      basePrice: 122850, type: "can", displayUnit: "개" },
-  { id: "can_seed",     emoji: "🥫", name: "씨앗 통조림",        basePrice: 960,    type: "can", displayUnit: "개" },
+  { id: "can_seed",     emoji: "🥫", name: "씨앗 통조림",        basePrice: 26000,  type: "can", displayUnit: "개" },
 ];
 
 function getMat(id: string): Material {

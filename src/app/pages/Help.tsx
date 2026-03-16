@@ -106,11 +106,21 @@ export function Help() {
   useEffect(() => {
     const hash = location.hash.slice(1);
     if (!hash) return;
+
+    // 1) 해당 hash가 속한 탭(그룹) 찾기
+    const targetGroup = categoryGroups.find((g) => g.ids.includes(hash));
+    if (targetGroup) {
+      setActiveGroup(targetGroup.label); // 탭 전환
+    }
+
+    // 2) 아코디언 열기
     const section = commandSections.find(s => s.id === hash);
     if (section) {
       setOpenId(hash);
-      setQuery(""); // 검색어 초기화
+      setQuery("");
     }
+
+    // 3) 탭 전환 + 렌더링 후 스크롤 (타이밍 여유 증가)
     const timer = setTimeout(() => {
       const el = document.getElementById(hash);
       if (el) {
@@ -118,7 +128,7 @@ export function Help() {
         el.classList.add("wiki-highlight-flash");
         setTimeout(() => el.classList.remove("wiki-highlight-flash"), 2200);
       }
-    }, 250);
+    }, 350);
     return () => clearTimeout(timer);
   }, [location.hash]);
 
