@@ -20,6 +20,31 @@ function useSearch(query: string): WikiItem[] {
   );
 }
 
+// 검색어 주변 텍스트 스니펫 추출
+function getSnippet(text: string, query: string, pad = 30): string {
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx < 0) return text.slice(0, 80) + (text.length > 80 ? "…" : "");
+  const start = Math.max(0, idx - pad);
+  const end = Math.min(text.length, idx + query.length + pad);
+  return (start > 0 ? "…" : "") + text.slice(start, end) + (end < text.length ? "…" : "");
+}
+
+// 검색어 하이라이트
+function Highlight({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <span>{text}</span>;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx < 0) return <span>{text}</span>;
+  return (
+    <span>
+      {text.slice(0, idx)}
+      <mark style={{ background: "#fef08a", color: "#78350f", borderRadius: "3px", padding: "0 2px" }}>
+        {text.slice(idx, idx + query.length)}
+      </mark>
+      {text.slice(idx + query.length)}
+    </span>
+  );
+}
+
 function SearchBar() {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
@@ -39,7 +64,8 @@ function SearchBar() {
   }, []);
 
   const handleSelect = (item: WikiItem) => {
-    navigate(item.route);
+    const path = item.anchor ? `${item.route}#${item.anchor}` : item.route;
+    navigate(path);
     setQuery("");
     setFocused(false);
   };
@@ -59,7 +85,7 @@ function SearchBar() {
         <input
           ref={inputRef}
           type="text"
-          placeholder="명령어, 도움말, 콘텐츠 등 전체 검색..."
+          placeholder="명령어, 시세, 요리, 낚시, 알바 등 전체 검색..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setFocused(true)}
@@ -77,7 +103,7 @@ function SearchBar() {
       </div>
 
       {showResults && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-40 max-h-80 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-40 max-h-[420px] overflow-y-auto">
           {results.length === 0 ? (
             <div className="px-5 py-8 text-center">
               <div className="text-2xl mb-2">🔍</div>
@@ -87,28 +113,45 @@ function SearchBar() {
             </div>
           ) : (
             <div>
-              <div className="px-4 py-2.5 border-b border-slate-50">
+              <div className="px-4 py-2.5 border-b border-slate-50 flex items-center justify-between">
                 <span className="text-slate-400" style={{ fontSize: "12px", fontWeight: 500 }}>
-                  검색 결과 {results.length}개
+                  검색 결과
+                </span>
+                <span className="bg-sky-100 text-sky-600 rounded-full px-2 py-0.5" style={{ fontSize: "11px", fontWeight: 700 }}>
+                  {results.length}개
                 </span>
               </div>
-              {results.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleSelect(item)}
-                  className="w-full flex items-start gap-3 px-4 py-3.5 hover:bg-sky-50 transition-colors text-left border-b border-slate-50 last:border-0"
-                >
-                  <span className="text-xl flex-shrink-0 mt-0.5">{item.categoryEmoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-slate-800 truncate" style={{ fontSize: "14px", fontWeight: 600 }}>{item.title}</span>
-                      <span className="bg-sky-100 text-sky-600 rounded-full px-2 py-0.5 flex-shrink-0" style={{ fontSize: "10px", fontWeight: 600 }}>{item.category}</span>
+              {results.map((item) => {
+                const snippet = getSnippet(item.content, query);
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleSelect(item)}
+                    className="w-full flex items-start gap-3 px-4 py-3.5 hover:bg-sky-50 transition-colors text-left border-b border-slate-50 last:border-0"
+                  >
+                    <span className="text-xl flex-shrink-0 mt-0.5">{item.categoryEmoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                        <span className="text-slate-800" style={{ fontSize: "14px", fontWeight: 600 }}>
+                          <Highlight text={item.title} query={query} />
+                        </span>
+                        <span className="bg-sky-100 text-sky-600 rounded-full px-2 py-0.5 flex-shrink-0" style={{ fontSize: "10px", fontWeight: 600 }}>
+                          {item.category}
+                        </span>
+                        {item.anchor && (
+                          <span className="bg-amber-50 text-amber-600 rounded-full px-2 py-0.5 flex-shrink-0" style={{ fontSize: "10px", fontWeight: 600 }}>
+                            해당 위치로 이동
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-slate-400" style={{ fontSize: "12px", lineHeight: 1.5 }}>
+                        <Highlight text={snippet} query={query} />
+                      </p>
                     </div>
-                    <p className="text-slate-400 truncate" style={{ fontSize: "12px" }}>{item.content.slice(0, 70)}...</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0 mt-1" />
-                </button>
-              ))}
+                    <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0 mt-1" />
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

@@ -10,6 +10,8 @@ const navItems = [
   { label: "던전", href: "/dungeon" },
   { label: "꾸미기", href: "/lifestyle" },
   { label: "도움말", href: "/help" },
+  { label: "알바임금", href: "/minimum-wage", highlight: true, highlightColor: "violet" },
+  { label: "최대시세", href: "/market-price", highlight: true, highlightColor: "teal" },
   { label: "상점가 계산", href: "/calculator", highlight: true },
   { label: "요리 수익", href: "/cooking-calc", highlight: true, highlightColor: "orange" },
 ];
@@ -64,6 +66,8 @@ export function Header() {
             {navItems.map((item) => {
               const active = isActive(item.href);
               const isOrange = item.highlightColor === "orange";
+              const isTeal = item.highlightColor === "teal";
+              const isViolet = item.highlightColor === "violet";
               return (
                 <Link
                   key={item.label}
@@ -74,6 +78,14 @@ export function Header() {
                         ? active
                           ? "bg-orange-400 text-white shadow-sm"
                           : "bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200"
+                        : isTeal
+                        ? active
+                          ? "bg-teal-400 text-white shadow-sm"
+                          : "bg-teal-50 text-teal-600 hover:bg-teal-100 border border-teal-200"
+                        : isViolet
+                        ? active
+                          ? "bg-violet-400 text-white shadow-sm"
+                          : "bg-violet-50 text-violet-600 hover:bg-violet-100 border border-violet-200"
                         : active
                         ? "bg-amber-400 text-white shadow-sm"
                         : "bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200"
@@ -83,7 +95,7 @@ export function Header() {
                   }`}
                   style={{ fontSize: "13px", fontWeight: item.highlight ? 700 : 500 }}
                 >
-                  {item.highlight && <span className="mr-1">{isOrange ? "🍳" : "💰"}</span>}
+                  {item.highlight && <span className="mr-1">{isOrange ? "🍳" : isTeal ? "📈" : isViolet ? "💼" : "💰"}</span>}
                   {item.label}
                 </Link>
               );

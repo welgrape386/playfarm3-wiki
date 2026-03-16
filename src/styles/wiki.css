@@ -72,3 +72,14 @@
     0 2px 8px 0 rgba(0, 0, 0, 0.10),
     0 1px 3px 0 rgba(0, 0, 0, 0.08) !important;
 }
+
+/* ── 4. 검색 앵커 하이라이트 애니메이션 ──────────────────────────────────── */
+@keyframes wiki-flash {
+  0%   { background-color: transparent; }
+  15%  { background-color: #fef9c3; box-shadow: 0 0 0 4px #fef08a; border-radius: 12px; }
+  70%  { background-color: #fef9c3; box-shadow: 0 0 0 4px #fef08a; border-radius: 12px; }
+  100% { background-color: transparent; box-shadow: none; }
+}
+.wiki-highlight-flash {
+  animation: wiki-flash 2s ease forwards;
+}

@@ -2,57 +2,56 @@ import { useState } from "react";
 import { ChefHat, TrendingUp, TrendingDown, RotateCcw, AlertCircle } from "lucide-react";
 
 // ─── 재료 데이터 ───────────────────────────────────────────────────────────────
-// type: "drop" = 작물 수확 시 1% 확률 드롭 재료
-//        "crop" = 일반 작물 (상점 판매가 기준)
-//        "special" = 특수 재료 (밀 씨앗, 독이 든 감자 등)
-//        "can" = 통조림 (작물 960개 압축 → 1개)
+// displayUnit: "개" = 1개 단위로 입력/표시, "셋" = 64개(1셋) 단위로 입력/표시
+// basePrice   = displayUnit 기준 최대시세
 interface Material {
   id: string;
   emoji: string;
   name: string;
-  basePrice: number; // 기본 참고 단가 (원/개 또는 원/통조림)
+  basePrice: number;   // displayUnit 기준 최대시세
   type: "drop" | "crop" | "special" | "can";
+  displayUnit: "개" | "셋"; // "셋" = 64개
   note?: string;
 }
 
 const MATERIALS: Material[] = [
-  // ── 드롭 재료 (1% 확률) ──
-  { id: "wheat_drop",  emoji: "🌾", name: "구수한 밀",          basePrice: 295, type: "drop" },
-  { id: "melon_drop",  emoji: "🍉", name: "아삭한 수박",        basePrice: 300, type: "drop" },
-  { id: "pumpkin_drop",emoji: "🎃", name: "달달한 호박",        basePrice: 420, type: "drop" },
-  { id: "beet_drop",   emoji: "🫚", name: "달콤한 비트",        basePrice: 397, type: "drop" },
-  { id: "cocoa_drop",  emoji: "🫘", name: "향긋한 코코아콩",    basePrice: 442, type: "drop" },
-  { id: "nether_drop", emoji: "🍄", name: "알싸한 네더 사마귀", basePrice: 510, type: "drop" },
-  { id: "carrot_drop", emoji: "🥕", name: "아삭한 당근",        basePrice: 340, type: "drop" },
-  { id: "potato_drop", emoji: "🥔", name: "포슬한 감자",        basePrice: 316, type: "drop" },
+  // ── 드롭 재료 (1개 기준) ──
+  { id: "wheat_drop",   emoji: "🌾", name: "구수한 밀",          basePrice: 385,    type: "drop",    displayUnit: "개" },
+  { id: "melon_drop",   emoji: "🍉", name: "아삭한 수박",        basePrice: 390,    type: "drop",    displayUnit: "개" },
+  { id: "pumpkin_drop", emoji: "🎃", name: "달달한 호박",        basePrice: 845,    type: "drop",    displayUnit: "개" },
+  { id: "beet_drop",    emoji: "🫚", name: "달콤한 비트",        basePrice: 515,    type: "drop",    displayUnit: "개" },
+  { id: "cocoa_drop",   emoji: "🫘", name: "향긋한 코코아콩",    basePrice: 575,    type: "drop",    displayUnit: "개" },
+  { id: "nether_drop",  emoji: "🍄", name: "알싸한 네더 사마귀", basePrice: 665,    type: "drop",    displayUnit: "개" },
+  { id: "carrot_drop",  emoji: "🥕", name: "아삭한 당근",        basePrice: 445,    type: "drop",    displayUnit: "개" },
+  { id: "potato_drop",  emoji: "🥔", name: "포슬한 감자",        basePrice: 410,    type: "drop",    displayUnit: "개" },
 
-  // ── 일반 작물 (상점 판매가 기준) ──
-  // 유저가 상점에 판매하는 가격 그대로 구매한다고 가정
-  { id: "carrot_crop", emoji: "🥕", name: "당근",        basePrice: 16,  type: "crop" },
-  { id: "beet_crop",   emoji: "🫚", name: "비트",        basePrice: 82,  type: "crop" },
-  { id: "potato_crop", emoji: "🥔", name: "감자",        basePrice: 13,  type: "crop" },
-  { id: "pumpkin_crop",emoji: "🎃", name: "호박",        basePrice: 90,  type: "crop" },
-  { id: "nether_crop", emoji: "🍄", name: "네더 사마귀", basePrice: 23,  type: "crop" },
+  // ── 일반 작물 (1셋 = 64개 기준) ──
+  { id: "carrot_crop",  emoji: "🥕", name: "당근",        basePrice: 1220,   type: "crop",    displayUnit: "셋" },
+  { id: "beet_crop",    emoji: "🫚", name: "비트",        basePrice: 6300,   type: "crop",    displayUnit: "셋" },
+  { id: "potato_crop",  emoji: "🥔", name: "감자",        basePrice: 1000,   type: "crop",    displayUnit: "셋" },
+  { id: "pumpkin_crop", emoji: "🎃", name: "호박",        basePrice: 6920,   type: "crop",    displayUnit: "셋" },
+  { id: "nether_crop",  emoji: "🍄", name: "네더 사마귀", basePrice: 1900,   type: "crop",    displayUnit: "셋" },
 
   // ── 특수 재료 ──
-  { id: "wheat_seed",  emoji: "🌱", name: "밀 씨앗",      basePrice: 1,   type: "special" },
-  { id: "bad_potato",  emoji: "🥔", name: "독이 든 감자", basePrice: 560, type: "special" },
+  { id: "wheat_seed",   emoji: "🌱", name: "밀 씨앗",      basePrice: 1,      type: "special", displayUnit: "개" },
+  { id: "bad_potato",   emoji: "☠️", name: "독이 든 감자", basePrice: 43000,  type: "special", displayUnit: "셋" },
 
-  // ── 통조림 (작물 960개 압축 → 1개, 상점 판매가 × 960 기준) ──
-  // 네더 사마귀 23원 × 960 = 22,080
-  { id: "can_nether",  emoji: "🥫", name: "네더 사마귀 통조림", basePrice: 22080,  type: "can" },
-  // 코코아 콩 44원 × 960 = 42,240
-  { id: "can_cocoa",   emoji: "🥫", name: "코코아콩 통조림",    basePrice: 42240,  type: "can" },
-  // 사탕수수 45원 × 960 = 43,200
-  { id: "can_sugar",   emoji: "🥫", name: "설탕 통조림",        basePrice: 43200,  type: "can" },
-  // 비트(사탕무) 82원 × 960 = 78,720
-  { id: "can_beet",    emoji: "🥫", name: "사탕무 통조림",      basePrice: 78720,  type: "can" },
-  // 씨앗(밀 씨앗) 1원 × 960 = 960
-  { id: "can_seed",    emoji: "🥫", name: "씨앗 통조림",        basePrice: 960,    type: "can" },
+  // ── 통조림 (1개 기준) ──
+  { id: "can_nether",   emoji: "🥫", name: "네더 사마귀 통조림", basePrice: 37050,  type: "can", displayUnit: "개" },
+  { id: "can_cocoa",    emoji: "🥫", name: "코코아콩 통조림",    basePrice: 65910,  type: "can", displayUnit: "개" },
+  { id: "can_sugar",    emoji: "🥫", name: "설탕 통조림",        basePrice: 67470,  type: "can", displayUnit: "개" },
+  { id: "can_beet",     emoji: "🥫", name: "사탕무 통조림",      basePrice: 122850, type: "can", displayUnit: "개" },
+  { id: "can_seed",     emoji: "🥫", name: "씨앗 통조림",        basePrice: 960,    type: "can", displayUnit: "개" },
 ];
 
 function getMat(id: string): Material {
   return MATERIALS.find(m => m.id === id)!;
+}
+
+// ─── 재료 1개당 단가 계산 ──────────────────────────────────────────────────────
+// "셋" 단위 재료는 입력값(원/셋)을 64로 나눠 1개당 가격으로 환산
+function pricePerItem(price: number, mat: Material): number {
+  return mat.displayUnit === "셋" ? price / 64 : price;
 }
 
 // ─── 레시피 데이터 ─────────────────────────────────────────────────────────────
@@ -69,40 +68,15 @@ const RECIPES: Recipe[] = [
   // ── 하급 요리 (즉시 완성) — 판매가 높은 순 ──
   {
     id: "golden-cookie", emoji: "🍪", name: "황금 쿠키",
-    tier: "하급", time: "즉시", sellPrice: 4952,
+    tier: "하급", time: "즉시", sellPrice: 6440,
     ingredients: [
       { id: "wheat_drop", qty: 3 },
       { id: "cocoa_drop", qty: 3 },
     ],
   },
   {
-    id: "evil-melon", emoji: "🍉", name: "사악한 수박",
-    tier: "하급", time: "즉시", sellPrice: 4200,
-    ingredients: [
-      { id: "melon_drop",   qty: 2 },
-      { id: "pumpkin_drop", qty: 2 },
-    ],
-  },
-  {
-    id: "devil-candy", emoji: "🍬", name: "악마의 사탕",
-    tier: "하급", time: "즉시", sellPrice: 3526,
-    ingredients: [
-      { id: "wheat_drop",  qty: 2 },
-      { id: "nether_drop", qty: 2 },
-    ],
-  },
-  {
-    id: "melon-bread", emoji: "🍈", name: "메론빵",
-    tier: "하급", time: "즉시", sellPrice: 3200,
-    ingredients: [
-      { id: "wheat_drop",  qty: 2 },
-      { id: "melon_drop",  qty: 2 },
-      { id: "wheat_seed",  qty: 6 },
-    ],
-  },
-  {
-    id: "carrot-bread", emoji: "🍞", name: "달콤한 당근빵",
-    tier: "하급", time: "즉시", sellPrice: 2700,
+    id: "carrot-bread", emoji: "🍞", name: "당근 빵",
+    tier: "하급", time: "즉시", sellPrice: 5525,
     ingredients: [
       { id: "potato_drop", qty: 3 },
       { id: "carrot_drop", qty: 1 },
@@ -110,8 +84,33 @@ const RECIPES: Recipe[] = [
     ],
   },
   {
+    id: "evil-melon", emoji: "🍉", name: "사악한 수박",
+    tier: "하급", time: "즉시", sellPrice: 5460,
+    ingredients: [
+      { id: "melon_drop",   qty: 2 },
+      { id: "pumpkin_drop", qty: 2 },
+    ],
+  },
+  {
+    id: "devil-candy", emoji: "🍬", name: "악마 사탕",
+    tier: "하급", time: "즉시", sellPrice: 4585,
+    ingredients: [
+      { id: "wheat_drop",  qty: 2 },
+      { id: "nether_drop", qty: 2 },
+    ],
+  },
+  {
+    id: "melon-bread", emoji: "🍈", name: "멜론 빵",
+    tier: "하급", time: "즉시", sellPrice: 3510,
+    ingredients: [
+      { id: "wheat_drop",  qty: 2 },
+      { id: "melon_drop",  qty: 2 },
+      { id: "wheat_seed",  qty: 6 },
+    ],
+  },
+  {
     id: "hamburger", emoji: "🍔", name: "햄버거",
-    tier: "하급", time: "즉��", sellPrice: 2455,
+    tier: "하급", time: "즉시", sellPrice: 3192,
     ingredients: [
       { id: "carrot_crop",  qty: 8 },
       { id: "beet_crop",    qty: 8 },
@@ -124,7 +123,7 @@ const RECIPES: Recipe[] = [
   // ── 상급 요리 (2시간 제작) — 판매가 높은 순 ──
   {
     id: "love-lunchbox", emoji: "❤️", name: "사랑의 도시락",
-    tier: "상급", time: "2시간", sellPrice: 1000000,
+    tier: "상급", time: "2시간", sellPrice: 1300000,
     ingredients: [
       { id: "can_nether", qty: 3 },
       { id: "can_cocoa",  qty: 3 },
@@ -137,8 +136,8 @@ const RECIPES: Recipe[] = [
     ],
   },
   {
-    id: "touching-lunchbox", emoji: "🥺", name: "감동의 도시락",
-    tier: "상급", time: "2시간", sellPrice: 310000,
+    id: "touching-lunchbox", emoji: "🥺", name: "정성의 도시락",
+    tier: "상급", time: "2시간", sellPrice: 403000,
     ingredients: [
       { id: "carrot_drop", qty: 15 },
       { id: "potato_drop", qty: 15 },
@@ -166,7 +165,6 @@ const TYPE_LABEL: Record<Material["type"], { label: string; color: string }> = {
 function fmt(n: number) { return n.toLocaleString("ko-KR"); }
 
 // ─── 재료 단가 설정 ────────────────────────────────────────────────────────────
-// 레시피에서 실제로 사용되는 재료만 필터링
 function getUsedMaterialIds(): Set<string> {
   const ids = new Set<string>();
   RECIPES.forEach(r => r.ingredients.forEach(ing => ids.add(ing.id)));
@@ -182,7 +180,6 @@ function MaterialPriceSetter({
   const usedIds = getUsedMaterialIds();
   const usedMats = MATERIALS.filter(m => usedIds.has(m.id));
 
-  // 타입 순서로 정렬
   const typeOrder: Material["type"][] = ["drop", "crop", "special", "can"];
   const grouped = typeOrder.map(type => ({
     type,
@@ -201,7 +198,10 @@ function MaterialPriceSetter({
         <span className="text-xl">🛒</span>
         <div className="flex-1">
           <div className="text-slate-800" style={{ fontSize: "15px", fontWeight: 700 }}>재료 구매 단가 설정</div>
-          <div className="text-slate-400" style={{ fontSize: "12px" }}>타유저에게 구매하는 가격을 입력하세요 (기본값 = 드롭재료 상점가, 나머지 직접 입력)</div>
+          <div className="text-slate-500" style={{ fontSize: "12px" }}>
+            ✅ <strong>최대시세</strong>에 맞춰져 있습니다 —
+            드롭·통조림 재료는 <strong>1개</strong> 기준, 일반 작물·특수 재료는 <strong>1셋(64개)</strong> 기준
+          </div>
         </div>
         <button
           onClick={handleReset}
@@ -222,10 +222,13 @@ function MaterialPriceSetter({
                 {tl.label}
               </span>
               {type === "can" && (
-                <span className="ml-2 text-slate-400" style={{ fontSize: "10.5px" }}>※ 작물 960개 압축 = 통조림 1개 · 기본값은 추정치</span>
+                <span className="ml-2 text-slate-400" style={{ fontSize: "10.5px" }}>※ 1개 단위</span>
               )}
-              {type === "crop" && (
-                <span className="ml-2 text-slate-400" style={{ fontSize: "10.5px" }}>※ 기본값은 추정치 — 실제 상점가로 수정하세요</span>
+              {type === "drop" && (
+                <span className="ml-2 text-slate-400" style={{ fontSize: "10.5px" }}>※ 1개 단위</span>
+              )}
+              {(type === "crop" || type === "special") && (
+                <span className="ml-2 text-slate-400" style={{ fontSize: "10.5px" }}>※ 1셋(64개) 단위 — 수익 계산 시 자동으로 1개 단가로 환산됩니다</span>
               )}
             </div>
             <div className="divide-y divide-slate-50">
@@ -236,6 +239,7 @@ function MaterialPriceSetter({
                 const diff = hasRef && !isNaN(numVal) && numVal > 0 ? numVal - mat.basePrice : 0;
                 const isCheaper = diff < 0;
                 const isExpensive = diff > 0;
+                const unitLabel = mat.displayUnit === "셋" ? "원/셋(64개)" : "원/개";
 
                 return (
                   <div key={mat.id} className="flex items-center gap-3 px-5 py-3 hover:bg-amber-50/30 transition-colors">
@@ -244,7 +248,7 @@ function MaterialPriceSetter({
                       <div className="text-slate-800" style={{ fontSize: "13px", fontWeight: 600 }}>{mat.name}</div>
                       {hasRef && diff !== 0 && (
                         <div className={isCheaper ? "text-emerald-500" : "text-red-400"} style={{ fontSize: "10.5px", fontWeight: 600 }}>
-                          {isCheaper ? `▼ 상점가보다 ${fmt(-diff)}원 저렴` : `▲ 상점가보다 ${fmt(diff)}원 비쌈`}
+                          {isCheaper ? `▼ 최대시세보다 ${fmt(-diff)}원 저렴` : `▲ 최대시세보다 ${fmt(diff)}원 비쌈`}
                         </div>
                       )}
                       {!hasRef && (
@@ -252,11 +256,11 @@ function MaterialPriceSetter({
                       )}
                     </div>
                     {hasRef && (
-                      <span className="bg-slate-100 text-slate-500 rounded-full px-2.5 py-1 flex-shrink-0" style={{ fontSize: "11px", fontWeight: 600 }}>
-                        상점가 {fmt(mat.basePrice)}원
+                      <span className="bg-teal-50 text-teal-600 border border-teal-100 rounded-full px-2.5 py-1 flex-shrink-0" style={{ fontSize: "11px", fontWeight: 600 }}>
+                        최대 {fmt(mat.basePrice)}{mat.displayUnit === "셋" ? "원/셋" : "원/개"}
                       </span>
                     )}
-                    <div className="flex items-center" style={{ minWidth: "120px" }}>
+                    <div className="flex items-center" style={{ minWidth: "130px" }}>
                       <div className={`flex items-center border-2 rounded-xl overflow-hidden bg-white transition-colors ${
                         isCheaper ? "border-emerald-300 bg-emerald-50/50" :
                         isExpensive ? "border-red-200 bg-red-50/30" :
@@ -265,7 +269,7 @@ function MaterialPriceSetter({
                         <input
                           type="text"
                           inputMode="numeric"
-                          maxLength={7}
+                          maxLength={8}
                           value={val}
                           onChange={(e) => {
                             const cleaned = e.target.value.replace(/[^0-9]/g, "");
@@ -275,8 +279,8 @@ function MaterialPriceSetter({
                           style={{ fontSize: "14px", fontWeight: 700, width: "80px" }}
                           placeholder={mat.basePrice > 0 ? String(mat.basePrice) : "0"}
                         />
-                        <span className={`pr-2.5 select-none ${isCheaper ? "text-emerald-500" : isExpensive ? "text-red-400" : "text-amber-600"}`}
-                          style={{ fontSize: "11px", fontWeight: 700 }}>원</span>
+                        <span className={`pr-2 select-none flex-shrink-0 ${isCheaper ? "text-emerald-500" : isExpensive ? "text-red-400" : "text-amber-600"}`}
+                          style={{ fontSize: "10px", fontWeight: 700 }}>{unitLabel}</span>
                       </div>
                     </div>
                   </div>
@@ -287,9 +291,10 @@ function MaterialPriceSetter({
         );
       })}
 
-      <div className="px-5 py-3 bg-slate-50 border-t border-slate-100">
-        <p className="text-slate-400" style={{ fontSize: "11.5px", lineHeight: 1.6 }}>
-          💡 드롭 재료는 상점가 기준으로 기본값이 설정되어 있어요. 일반 작물·통조림·특수 재료는 구매하는 가격을 직접 입력하세요.
+      <div className="px-5 py-3 bg-teal-50 border-t border-teal-100">
+        <p className="text-teal-700" style={{ fontSize: "11.5px", lineHeight: 1.6 }}>
+          📈 단가가 <strong>최대시세</strong>에 맞춰져 있습니다. 실제 구매 가격이 다르다면 직접 수정하세요.
+          농작물·독이든 감자는 <strong>1셋(64개) 단위</strong>로 입력하면 자동으로 1개 단가로 나눠서 계산됩니다.
         </p>
       </div>
     </div>
@@ -304,8 +309,10 @@ function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string,
     const mat = getMat(ing.id);
     const priceStr = prices[ing.id] ?? String(mat.basePrice);
     const price = parseInt(priceStr, 10) || 0;
-    const cost = price * ing.qty;
-    return { mat, ing, price, cost };
+    // "셋" 단위 재료는 1개 단가로 환산
+    const unitPrice = pricePerItem(price, mat);
+    const cost = unitPrice * ing.qty;
+    return { mat, ing, price, unitPrice, cost };
   });
 
   const totalCost = ingredientCosts.reduce((s, x) => s + x.cost, 0);
@@ -363,10 +370,9 @@ function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string,
       {/* 재료 목록 */}
       <div className="px-5 py-4">
         <div className="space-y-2">
-          {ingredientCosts.map(({ mat, ing, price, cost }) => {
+          {ingredientCosts.map(({ mat, ing, price, unitPrice, cost }) => {
             const tl = TYPE_LABEL[mat.type];
-            const hasRef = mat.basePrice > 0;
-            const isCheaper = hasRef && price < mat.basePrice && price > 0;
+            const isSetUnit = mat.displayUnit === "셋";
             return (
               <div key={ing.id} className="flex items-center gap-2.5">
                 <span style={{ fontSize: "15px" }}>{mat.emoji}</span>
@@ -378,18 +384,19 @@ function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string,
                   </div>
                   <div className="text-slate-400" style={{ fontSize: "10.5px" }}>
                     {price > 0 ? (
-                      <span className={isCheaper ? "text-emerald-500" : "text-slate-400"}>@{fmt(price)}원/개</span>
+                      <span className="text-slate-400">
+                        {isSetUnit
+                          ? `${fmt(price)}원/셋 → @${fmt(Math.round(unitPrice))}원/개`
+                          : `@${fmt(price)}원/개`}
+                      </span>
                     ) : (
                       <span className="text-red-400">⚠️ 단가 미입력</span>
-                    )}
-                    {hasRef && price > 0 && price !== mat.basePrice && (
-                      <span className="text-slate-300 ml-1">(상점가 {fmt(mat.basePrice)}원)</span>
                     )}
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
                   <div className={price > 0 ? "text-slate-700" : "text-slate-300"} style={{ fontSize: "13px", fontWeight: 700 }}>
-                    {price > 0 ? `${fmt(cost)}원` : "-"}
+                    {price > 0 ? `${fmt(Math.round(cost))}원` : "-"}
                   </div>
                 </div>
               </div>
@@ -409,7 +416,7 @@ function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string,
           )}
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <span className="text-slate-500" style={{ fontSize: "12px" }}>총 재료비</span>
-            <span className="text-slate-700" style={{ fontSize: "14px", fontWeight: 700 }}>{fmt(totalCost)}원</span>
+            <span className="text-slate-700" style={{ fontSize: "14px", fontWeight: 700 }}>{fmt(Math.round(totalCost))}원</span>
           </div>
           <div className="flex items-center justify-between gap-2 mb-2">
             <span className="text-slate-500" style={{ fontSize: "12px" }}>판매가</span>
@@ -426,7 +433,7 @@ function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string,
               </span>
               <span style={{ fontSize: "16px", fontWeight: 900 }}
                 className={isProfitable ? "text-emerald-700" : "text-red-600"}>
-                {isProfitable ? "+" : ""}{fmt(profit)}원
+                {isProfitable ? "+" : ""}{fmt(Math.round(profit))}원
               </span>
             </div>
           )}
@@ -440,8 +447,9 @@ function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string,
 function ProfitSummary({ prices }: { prices: Record<string, string> }) {
   const analysis = RECIPES.map(r => {
     const cost = r.ingredients.reduce((s, ing) => {
+      const mat = getMat(ing.id);
       const val = parseInt(prices[ing.id] ?? "0", 10) || 0;
-      return s + val * ing.qty;
+      return s + pricePerItem(val, mat) * ing.qty;
     }, 0);
     const hasZero = r.ingredients.some(ing => {
       const val = parseInt(prices[ing.id] ?? "0", 10);
@@ -478,13 +486,13 @@ function ProfitSummary({ prices }: { prices: Record<string, string> }) {
           </div>
           <div className="bg-white border border-emerald-100 rounded-xl p-3 text-center">
             <div className="text-emerald-700" style={{ fontSize: "14px", fontWeight: 900 }}>
-              {fmt(profitable.reduce((s, a) => s + a.profit, 0))}원
+              {fmt(Math.round(profitable.reduce((s, a) => s + a.profit, 0)))}원
             </div>
             <div className="text-slate-400 mt-0.5" style={{ fontSize: "11px" }}>1개씩 총 수익</div>
           </div>
           <div className="bg-white border border-emerald-100 rounded-xl p-3 text-center">
             <div className="text-emerald-700" style={{ fontSize: "14px", fontWeight: 900 }}>
-              {profitable.length > 0 ? fmt(Math.max(...profitable.map(a => a.profit))) : "-"}원
+              {profitable.length > 0 ? fmt(Math.round(Math.max(...profitable.map(a => a.profit)))) : "-"}원
             </div>
             <div className="text-slate-400 mt-0.5" style={{ fontSize: "11px" }}>최고 수익</div>
           </div>
@@ -501,7 +509,7 @@ function ProfitSummary({ prices }: { prices: Record<string, string> }) {
                 <span className="flex-1 text-slate-700" style={{ fontSize: "13px", fontWeight: 600 }}>{recipe.name}</span>
                 <span className={`flex-shrink-0 rounded-full px-3 py-1 ${profit > 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"}`}
                   style={{ fontSize: "13px", fontWeight: 700 }}>
-                  {profit > 0 ? "+" : ""}{fmt(profit)}원
+                  {profit > 0 ? "+" : ""}{fmt(Math.round(profit))}원
                 </span>
               </div>
             ))}
@@ -534,7 +542,8 @@ export function CookingCalculator() {
           요리 수익 계산기
         </h1>
         <p className="text-slate-500" style={{ fontSize: "15px" }}>
-          재료 구매 단가를 입력하면 요리별 수익이 자동으로 계산됩니다.
+          재료 단가가 <strong className="text-teal-600">최대시세</strong>에 맞춰져 있습니다.
+          실제 구매 가격에 맞게 수정하면 수익이 자동으로 계산됩니다.
         </p>
       </div>
 
@@ -584,7 +593,7 @@ export function CookingCalculator() {
       <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm mb-4">
         <div className="px-5 py-4 border-b border-slate-50 flex items-center gap-2">
           <span className="text-lg">📋</span>
-          <span className="text-slate-700" style={{ fontSize: "15px", fontWeight: 700 }}>요리 판매가 참고표</span>
+          <span className="text-slate-700" style={{ fontSize: "15px", fontWeight: 700 }}>요리 판매가 참고표 (최대시세)</span>
         </div>
         <div className="divide-y divide-slate-50">
           {[...RECIPES].sort((a, b) => b.sellPrice - a.sellPrice).map(r => {
@@ -593,9 +602,10 @@ export function CookingCalculator() {
               const val = parseInt(prices[ing.id] ?? "0", 10);
               return !val;
             });
-            const buyProfit = hasZero ? null : r.sellPrice - r.ingredients.reduce((s, ing) => {
-              return s + (parseInt(prices[ing.id] ?? "0", 10) || 0) * ing.qty;
-            }, 0);
+            const buyProfit = hasZero ? null : Math.round(r.sellPrice - r.ingredients.reduce((s, ing) => {
+              const mat = getMat(ing.id);
+              return s + pricePerItem(parseInt(prices[ing.id] ?? "0", 10) || 0, mat) * ing.qty;
+            }, 0));
             return (
               <div key={r.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50/50 transition-colors">
                 <span style={{ fontSize: "18px" }}>{r.emoji}</span>
@@ -622,10 +632,10 @@ export function CookingCalculator() {
         </div>
       </div>
 
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4">
-        <p className="text-slate-500" style={{ fontSize: "12.5px", lineHeight: 1.7 }}>
-          ⚠️ <strong>기준 안내</strong> — 상점 <em>구매가</em>가 아닌, 유저가 상점에 <strong>판매하는 가격 그대로</strong> 내가 구매해왔을 때 기준입니다.<br />
-          💡 통조림 기본값은 <strong>해당 작물 상점 판매가 × 960개</strong> 기준으로 자동 계산되어 있어요.<br />
+      <div className="bg-teal-50 border border-teal-100 rounded-2xl px-5 py-4">
+        <p className="text-teal-700" style={{ fontSize: "12.5px", lineHeight: 1.7 }}>
+          📈 <strong>최대시세 기준 안내</strong> — 재료 단가는 대량상점 최대시세에 맞춰져 있어요.<br />
+          💡 농작물·독이든 감자는 <strong>1셋(64개) 단위</strong>로 입력하면 자동으로 1개 단가로 나눠 계산됩니다.<br />
           💡 실제 구매 가격이 다르다면 위 단가 입력칸에서 수정하면 바로 반영됩니다.
         </p>
       </div>

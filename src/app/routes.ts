@@ -10,6 +10,8 @@ import { Island } from "./pages/Island";
 import { Costume } from "./pages/Costume";
 import { Pet } from "./pages/Pet";
 import { Help } from "./pages/Help";
+import { MarketPrice } from "./pages/MarketPrice";
+import { MinimumWage } from "./pages/MinimumWage";
 import { Calculator } from "./pages/Calculator";
 import { CookingCalculator } from "./pages/CookingCalculator";
 import { Guide } from "./pages/Guide";
@@ -29,6 +31,8 @@ export const router = createBrowserRouter([
       { path: "lifestyle/costume", Component: Costume },
       { path: "lifestyle/pet", Component: Pet },
       { path: "help", Component: Help },
+      { path: "market-price", Component: MarketPrice },
+      { path: "minimum-wage", Component: MinimumWage },
       { path: "calculator", Component: Calculator },
       { path: "cooking-calc", Component: CookingCalculator },
       { path: "guide", Component: Guide },

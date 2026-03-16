@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BookOpen, Search, X, ChevronDown } from "lucide-react";
+import { useLocation } from "react-router";
 import { commandSections, CommandItem } from "../data/commandData";
 
 const categoryGroups = [
@@ -99,6 +100,27 @@ export function Help() {
   const [openId, setOpenId] = useState<string | null>("misc1");
   const [query, setQuery] = useState("");
   const [activeGroup, setActiveGroup] = useState<string>("명령어");
+  const location = useLocation();
+
+  // 검색 결과에서 앵커로 이동 시 해당 섹션 자동 열기 + 스크롤
+  useEffect(() => {
+    const hash = location.hash.slice(1);
+    if (!hash) return;
+    const section = commandSections.find(s => s.id === hash);
+    if (section) {
+      setOpenId(hash);
+      setQuery(""); // 검색어 초기화
+    }
+    const timer = setTimeout(() => {
+      const el = document.getElementById(hash);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        el.classList.add("wiki-highlight-flash");
+        setTimeout(() => el.classList.remove("wiki-highlight-flash"), 2200);
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [location.hash]);
 
   const groupIds = categoryGroups.find((g) => g.label === activeGroup)?.ids ?? [];
 
@@ -217,6 +239,7 @@ export function Help() {
             return (
               <div
                 key={sec.id}
+                id={sec.id}
                 className={`bg-white border rounded-2xl overflow-hidden transition-all duration-200 ${
                   isOpen ? "border-sky-200 shadow-md" : "border-slate-100 hover:border-slate-200 hover:shadow-sm"
                 }`}
