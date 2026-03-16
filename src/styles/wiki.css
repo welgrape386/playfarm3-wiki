@@ -2,6 +2,32 @@
    wiki-main 클래스가 적용된 <main> 내부 모든 페이지에 자동 적용됩니다.
    ─────────────────────────────────────────────────────────────────────────── */
 
+/* ── 0. 한국어 타이포그래피 최적화 ────────────────────────────────────────── */
+:root {
+  /* Pretendard 가변 폰트 설정 */
+  font-feature-settings: 'kern' 1, 'liga' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 한국어 줄바꿈 — 어절 단위로 줄바꿈 (단어가 임의로 잘리지 않게) */
+html, body, .wiki-main {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: auto;
+}
+
+/* 숫자·영문 안의 줄바꿈은 break-all 허용하되 한글은 keep-all 유지 */
+.wiki-main p,
+.wiki-main span,
+.wiki-main div,
+.wiki-main li,
+.wiki-main td,
+.wiki-main th {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
 /* ── 1. 섹션 간격: section 태그 및 wiki-section 클래스에 넉넉한 여백 ───────── */
 .wiki-main section {
   margin-bottom: 5rem !important;

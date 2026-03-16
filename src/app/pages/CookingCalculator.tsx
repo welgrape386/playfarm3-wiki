@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChefHat, TrendingUp, TrendingDown, RotateCcw, AlertCircle } from "lucide-react";
+import { ChefHat, TrendingUp, TrendingDown, RotateCcw, AlertCircle, ChevronDown, ChevronUp, Package } from "lucide-react";
 
 // ─── 재료 데이터 ───────────────────────────────────────────────────────────────
 // displayUnit: "개" = 1개 단위로 입력/표시, "셋" = 64개(1셋) 단위로 입력/표시
@@ -304,12 +304,17 @@ function MaterialPriceSetter({
 // ─── 요리 수익 카드 ───────────────────────────────────────────────────────────
 function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string, string> }) {
   const tc = TIER_COLORS[recipe.tier];
+  const [expanded, setExpanded] = useState(false);
+  const [stock, setStock] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    recipe.ingredients.forEach(ing => { init[ing.id] = ""; });
+    return init;
+  });
 
   const ingredientCosts = recipe.ingredients.map(ing => {
     const mat = getMat(ing.id);
     const priceStr = prices[ing.id] ?? String(mat.basePrice);
     const price = parseInt(priceStr, 10) || 0;
-    // "셋" 단위 재료는 1개 단가로 환산
     const unitPrice = pricePerItem(price, mat);
     const cost = unitPrice * ing.qty;
     return { mat, ing, price, unitPrice, cost };
@@ -320,6 +325,21 @@ function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string,
   const profitPct = totalCost > 0 ? Math.round((profit / totalCost) * 100) : 0;
   const isProfitable = profit > 0;
   const hasZeroPrice = ingredientCosts.some(x => x.price === 0);
+
+  // ── 최대 제작 수 계산 ──
+  const maxBatch = (() => {
+    const vals = recipe.ingredients.map(ing => {
+      const s = parseInt(stock[ing.id] ?? "", 10);
+      if (isNaN(s) || s <= 0) return null;
+      return Math.floor(s / ing.qty);
+    });
+    if (vals.some(v => v === null)) return null;
+    return Math.min(...(vals as number[]));
+  })();
+  const hasAnyStock = recipe.ingredients.some(ing => (parseInt(stock[ing.id] ?? "", 10) || 0) > 0);
+  const totalBatchProfit = maxBatch !== null && !hasZeroPrice ? maxBatch * Math.round(profit) : null;
+  const totalBatchCost   = maxBatch !== null ? maxBatch * Math.round(totalCost) : null;
+  const totalBatchSell   = maxBatch !== null ? maxBatch * recipe.sellPrice : null;
 
   return (
     <div className={`bg-white border-2 rounded-2xl overflow-hidden transition-all hover:shadow-md ${
@@ -438,7 +458,129 @@ function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string,
             </div>
           )}
         </div>
+
+        {/* 더보기 버튼 */}
+        <button
+          onClick={() => setExpanded(v => !v)}
+          className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
+          style={{ fontSize: "12.5px", fontWeight: 600 }}
+        >
+          <Package className="w-3.5 h-3.5" />
+          {expanded ? "재료 보유량 닫기" : "재료 보유량으로 최대 제작 수 계산"}
+          {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </button>
       </div>
+
+      {/* 최대 제작 수 계산 패널 */}
+      {expanded && (
+        <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Package className="w-4 h-4 text-sky-500" />
+            <span className="text-slate-700" style={{ fontSize: "14px", fontWeight: 700 }}>보유 재료 입력</span>
+            <span className="text-slate-400" style={{ fontSize: "11.5px" }}>— 개수를 입력하면 최대 제작 수를 알려줘요</span>
+          </div>
+
+          <div className="space-y-2 mb-4">
+            {recipe.ingredients.map(ing => {
+              const mat = getMat(ing.id);
+              const val = stock[ing.id] ?? "";
+              const numVal = parseInt(val, 10);
+              const canMakeThis = !isNaN(numVal) && numVal > 0 ? Math.floor(numVal / ing.qty) : null;
+              const isBottleneck = maxBatch !== null && canMakeThis !== null && canMakeThis === maxBatch;
+
+              return (
+                <div key={ing.id} className="flex items-center gap-3">
+                  <span style={{ fontSize: "16px" }}>{mat.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-slate-700" style={{ fontSize: "12.5px", fontWeight: 500 }}>{mat.name}</span>
+                      <span className="text-slate-400" style={{ fontSize: "11px" }}>× {ing.qty}개 필요</span>
+                      {isBottleneck && (
+                        <span className="bg-red-100 text-red-500 rounded-full px-1.5 py-0.5" style={{ fontSize: "9px", fontWeight: 700 }}>
+                          병목
+                        </span>
+                      )}
+                    </div>
+                    {canMakeThis !== null && (
+                      <div className="text-slate-400" style={{ fontSize: "10.5px" }}>
+                        → 이 재료로 최대 <span className={`font-bold ${isBottleneck ? "text-red-500" : "text-sky-600"}`}>{canMakeThis}개</span> 제작 가능
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center border-2 border-sky-200 focus-within:border-sky-400 rounded-xl overflow-hidden bg-white" style={{ minWidth: "110px" }}>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={7}
+                      value={val}
+                      onChange={e => {
+                        const cleaned = e.target.value.replace(/[^0-9]/g, "");
+                        setStock(prev => ({ ...prev, [ing.id]: cleaned }));
+                      }}
+                      placeholder="0"
+                      className="bg-transparent text-slate-800 text-right outline-none px-2 py-2"
+                      style={{ fontSize: "14px", fontWeight: 700, width: "65px" }}
+                    />
+                    <span className="pr-2 text-sky-500 select-none flex-shrink-0" style={{ fontSize: "10px", fontWeight: 700 }}>개</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 결과 */}
+          {hasAnyStock ? (
+            maxBatch !== null ? (
+              <div className="rounded-xl overflow-hidden border border-sky-200">
+                <div className="bg-sky-500 px-4 py-3 flex items-center justify-between">
+                  <span className="text-white" style={{ fontSize: "13px", fontWeight: 700 }}>최대 제작 수</span>
+                  <span className="text-white" style={{ fontSize: "22px", fontWeight: 900 }}>{fmt(maxBatch)}개</span>
+                </div>
+                <div className="bg-white px-4 py-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500" style={{ fontSize: "12px" }}>총 재료비</span>
+                    <span className="text-slate-700" style={{ fontSize: "13px", fontWeight: 700 }}>
+                      {totalBatchCost !== null ? `${fmt(totalBatchCost)}원` : "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500" style={{ fontSize: "12px" }}>총 판매액</span>
+                    <span className="text-slate-700" style={{ fontSize: "13px", fontWeight: 700 }}>
+                      {totalBatchSell !== null ? `${fmt(totalBatchSell)}원` : "-"}
+                    </span>
+                  </div>
+                  {totalBatchProfit !== null && (
+                    <div className={`flex items-center justify-between rounded-xl px-3 py-2.5 mt-1 ${totalBatchProfit >= 0 ? "bg-emerald-50 border border-emerald-100" : "bg-red-50 border border-red-100"}`}>
+                      <span className={totalBatchProfit >= 0 ? "text-emerald-700" : "text-red-700"} style={{ fontSize: "13px", fontWeight: 700 }}>
+                        {totalBatchProfit >= 0 ? "✅ 예상 총 수익" : "❌ 예상 총 손해"}
+                      </span>
+                      <span className={totalBatchProfit >= 0 ? "text-emerald-700" : "text-red-600"} style={{ fontSize: "18px", fontWeight: 900 }}>
+                        {totalBatchProfit >= 0 ? "+" : ""}{fmt(totalBatchProfit)}원
+                      </span>
+                    </div>
+                  )}
+                  {hasZeroPrice && (
+                    <p className="text-amber-500" style={{ fontSize: "11px" }}>
+                      ⚠️ 단가 미입력으로 수익 계산 불가 — 위 단가 설정에서 입력해주세요
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <p className="text-amber-600" style={{ fontSize: "12px" }}>
+                  모든 재료의 보유량을 입력해야 최대 제작 수를 계산할 수 있어요.
+                </p>
+              </div>
+            )
+          ) : (
+            <div className="text-center py-3 text-slate-400" style={{ fontSize: "12px" }}>
+              위 입력칸에 보유한 재료 개수를 입력하세요
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -17,7 +17,7 @@ export function Footer() {
                   플레이팜3 비공식 위키
                 </div>
                 <div className="text-slate-500" style={{ fontSize: "11px" }}>
-                  PlayFarm3 Unofficial Wiki
+                  유저 제작 · 비공식 팬 위키
                 </div>
               </div>
             </div>
