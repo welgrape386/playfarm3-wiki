@@ -1,4 +1,4 @@
-import { Gem, ChefHat, Pickaxe, Fish, Package, Tag, ShoppingBag, Sprout } from "lucide-react";
+import { Gem, ChefHat, Pickaxe, Fish, Package, Tag, ShoppingBag, Sprout, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router";
 
@@ -222,6 +222,7 @@ interface SectionCardProps {
   accentClass: string;
   headerGradient: string;
   children: React.ReactNode;
+  defaultOpen?: boolean;
 }
 
 function SectionCard({
@@ -232,14 +233,17 @@ function SectionCard({
   accentClass,
   headerGradient,
   children,
+  defaultOpen = true,
 }: SectionCardProps) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-      <div
-        className={`flex items-center gap-3 px-5 py-4 border-b border-slate-100 ${headerGradient}`}
+      <button
+        onClick={() => setOpen(!open)}
+        className={`w-full flex items-center gap-3 px-5 py-4 border-b border-slate-100 ${headerGradient} transition-colors hover:brightness-95`}
       >
         <span className="text-xl">{icon}</span>
-        <div className="flex-1">
+        <div className="flex-1 text-left">
           <span className="text-slate-800" style={{ fontSize: "15px", fontWeight: 700 }}>
             {title}
           </span>
@@ -250,11 +254,24 @@ function SectionCard({
             {unitLabel}
           </span>
         </div>
-        <span className="text-slate-400" style={{ fontSize: "11px" }}>
+        <span className="text-slate-400 mr-2" style={{ fontSize: "11px" }}>
           {unitDesc}
         </span>
+        <ChevronDown
+          className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateRows: open ? "1fr" : "0fr",
+          transition: "grid-template-rows 0.22s ease",
+        }}
+      >
+        <div style={{ overflow: "hidden" }}>
+          {children}
+        </div>
       </div>
-      {children}
     </div>
   );
 }
@@ -318,26 +335,7 @@ export function MarketPrice() {
       </div>
 
       <div className="space-y-6">
-        {/* 기타 아이템 */}
-        <div id="mp-other">
-          <SectionCard
-            icon={<ShoppingBag className="w-5 h-5 text-violet-500" />}
-            title="기타 아이템"
-            unitLabel="개 기준"
-            unitDesc="1개 단위"
-            accentClass="bg-violet-100 text-violet-700"
-            headerGradient="bg-gradient-to-r from-violet-50 to-purple-50"
-          >
-            <PriceTable
-              rows={OTHER_ITEMS}
-              accent="bg-violet-100 text-violet-700"
-              inputBorder="#c4b5fd"
-              resultColor="text-violet-700"
-            />
-          </SectionCard>
-        </div>
-
-        {/* 농작물 */}
+        {/* 농작물 — 기본 펼침 */}
         <div id="mp-crops">
           <SectionCard
             icon={<Sprout className="w-5 h-5 text-green-500" />}
@@ -346,6 +344,7 @@ export function MarketPrice() {
             unitDesc="64개 = 1셋"
             accentClass="bg-green-100 text-green-700"
             headerGradient="bg-gradient-to-r from-green-50 to-emerald-50"
+            defaultOpen={true}
           >
             <PriceTable
               rows={CROPS.map((c) => ({ ...c, unit: "1셋(64개)" }))}
@@ -356,7 +355,7 @@ export function MarketPrice() {
           </SectionCard>
         </div>
 
-        {/* 결정석 */}
+        {/* 결정석 — 기본 접힘 */}
         <div id="mp-crystals">
           <SectionCard
             icon={<Gem className="w-5 h-5 text-sky-500" />}
@@ -365,6 +364,7 @@ export function MarketPrice() {
             unitDesc="1개 단위"
             accentClass="bg-sky-100 text-sky-700"
             headerGradient="bg-gradient-to-r from-sky-50 to-cyan-50"
+            defaultOpen={false}
           >
             <SubHeader label="⛏️ 채광장" color="bg-slate-50/80" />
             <PriceTable
@@ -383,7 +383,7 @@ export function MarketPrice() {
           </SectionCard>
         </div>
 
-        {/* 광물 블록 */}
+        {/* 광물 블록 — 기본 접힘 */}
         <div id="mp-blocks">
           <SectionCard
             icon={<Pickaxe className="w-5 h-5 text-amber-500" />}
@@ -392,6 +392,7 @@ export function MarketPrice() {
             unitDesc="64개 = 1셋"
             accentClass="bg-amber-100 text-amber-700"
             headerGradient="bg-gradient-to-r from-amber-50 to-yellow-50"
+            defaultOpen={false}
           >
             <PriceTable
               rows={MINERAL_BLOCKS.map((b) => ({ ...b, unit: "1셋(64개)" }))}
@@ -402,7 +403,7 @@ export function MarketPrice() {
           </SectionCard>
         </div>
 
-        {/* 요리 */}
+        {/* 요리 — 기본 접힘 */}
         <div id="mp-cooking">
           <SectionCard
             icon={<ChefHat className="w-5 h-5 text-orange-500" />}
@@ -411,6 +412,7 @@ export function MarketPrice() {
             unitDesc="1개 단위"
             accentClass="bg-orange-100 text-orange-700"
             headerGradient="bg-gradient-to-r from-orange-50 to-red-50"
+            defaultOpen={false}
           >
             <SubHeader label="⭐ 고급 요리 (2시간 제작)" color="bg-orange-50/60" />
             <PriceTable
@@ -429,7 +431,7 @@ export function MarketPrice() {
           </SectionCard>
         </div>
 
-        {/* 요리 재료 */}
+        {/* 요리 재료 — 기본 접힘 */}
         <div id="mp-mats">
           <SectionCard
             icon={<Package className="w-5 h-5 text-rose-500" />}
@@ -438,6 +440,7 @@ export function MarketPrice() {
             unitDesc="1개 단위"
             accentClass="bg-rose-100 text-rose-700"
             headerGradient="bg-gradient-to-r from-rose-50 to-pink-50"
+            defaultOpen={false}
           >
             <SubHeader label="🥫 가공 재료 (통조림)" color="bg-sky-50/60" />
             <PriceTable
@@ -452,6 +455,26 @@ export function MarketPrice() {
               accent="bg-amber-100 text-amber-700"
               inputBorder="#fcd34d"
               resultColor="text-amber-700"
+            />
+          </SectionCard>
+        </div>
+
+        {/* 기타 아이템 — 맨 아래, 기본 접힘 */}
+        <div id="mp-other">
+          <SectionCard
+            icon={<ShoppingBag className="w-5 h-5 text-violet-500" />}
+            title="기타 아이템"
+            unitLabel="개 기준"
+            unitDesc="1개 단위"
+            accentClass="bg-violet-100 text-violet-700"
+            headerGradient="bg-gradient-to-r from-violet-50 to-purple-50"
+            defaultOpen={false}
+          >
+            <PriceTable
+              rows={OTHER_ITEMS}
+              accent="bg-violet-100 text-violet-700"
+              inputBorder="#c4b5fd"
+              resultColor="text-violet-700"
             />
           </SectionCard>
         </div>

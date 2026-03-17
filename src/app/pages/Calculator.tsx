@@ -316,7 +316,7 @@ function CategorySection({
   onChange: (id: string, field: "boxes" | "sets" | "units", val: string) => void;
   bulkPct: number;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(catId !== "crops");
   const cat = priceCategories.find((c) => c.id === catId)!;
   const colors = colorMap[catId] ?? colorMap.crops;
   const isBulkCat = catId === BULK_ELIGIBLE_CAT;

@@ -5,7 +5,7 @@ const crystals = [
   { emoji: "💚", name: "에메랄드 결정", price: 17550, color: "from-emerald-50 to-green-50 border-emerald-200", text: "text-emerald-600", rarity: "희귀" },
   { emoji: "💎", name: "다이아몬드 결정", price: 11700, color: "from-cyan-50 to-sky-50 border-cyan-200", text: "text-cyan-600", rarity: "희귀" },
   { emoji: "🟡", name: "황금 결정", price: 2710, color: "from-yellow-50 to-amber-50 border-yellow-200", text: "text-yellow-600", rarity: "보통" },
-  { emoji: "⬜", name: "철 결정", price: 1560, color: "from-slate-50 to-gray-50 border-slate-200", text: "text-slate-600", rarity: "보통" },
+  { emoji: "🔩", name: "철 결정", price: 1560, color: "from-slate-50 to-gray-50 border-slate-200", text: "text-slate-600", rarity: "보통" },
   { emoji: "🪨", name: "돌 결정", price: 585, color: "from-stone-50 to-gray-50 border-stone-200", text: "text-stone-600", rarity: "흔함" },
 ];
 

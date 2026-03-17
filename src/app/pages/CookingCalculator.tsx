@@ -60,7 +60,8 @@ interface Recipe {
   id: string; emoji: string; name: string;
   tier: "하급" | "상급";
   time: string;
-  sellPrice: number;
+  shopPrice: number;   // 기본 상점 판매가
+  sellPrice: number;   // 최대시세 판매가
   ingredients: Ingredient[];
 }
 
@@ -68,7 +69,7 @@ const RECIPES: Recipe[] = [
   // ── 하급 요리 (즉시 완성) — 판매가 높은 순 ──
   {
     id: "golden-cookie", emoji: "🍪", name: "황금 쿠키",
-    tier: "하급", time: "즉시", sellPrice: 6440,
+    tier: "하급", time: "즉시", shopPrice: 4952, sellPrice: 6440,
     ingredients: [
       { id: "wheat_drop", qty: 3 },
       { id: "cocoa_drop", qty: 3 },
@@ -76,7 +77,7 @@ const RECIPES: Recipe[] = [
   },
   {
     id: "carrot-bread", emoji: "🍞", name: "당근 빵",
-    tier: "하급", time: "즉시", sellPrice: 5525,
+    tier: "하급", time: "즉시", shopPrice: 4250, sellPrice: 5525,
     ingredients: [
       { id: "potato_drop", qty: 3 },
       { id: "carrot_drop", qty: 1 },
@@ -85,7 +86,7 @@ const RECIPES: Recipe[] = [
   },
   {
     id: "evil-melon", emoji: "🍉", name: "사악한 수박",
-    tier: "하급", time: "즉시", sellPrice: 5460,
+    tier: "하급", time: "즉시", shopPrice: 4200, sellPrice: 5460,
     ingredients: [
       { id: "melon_drop",   qty: 2 },
       { id: "pumpkin_drop", qty: 2 },
@@ -93,7 +94,7 @@ const RECIPES: Recipe[] = [
   },
   {
     id: "devil-candy", emoji: "🍬", name: "악마 사탕",
-    tier: "하급", time: "즉시", sellPrice: 4585,
+    tier: "하급", time: "즉시", shopPrice: 3526, sellPrice: 4585,
     ingredients: [
       { id: "wheat_drop",  qty: 2 },
       { id: "nether_drop", qty: 2 },
@@ -101,7 +102,7 @@ const RECIPES: Recipe[] = [
   },
   {
     id: "melon-bread", emoji: "🍈", name: "멜론 빵",
-    tier: "하급", time: "즉시", sellPrice: 3510,
+    tier: "하급", time: "즉시", shopPrice: 2700, sellPrice: 3510,
     ingredients: [
       { id: "wheat_drop",  qty: 2 },
       { id: "melon_drop",  qty: 2 },
@@ -110,7 +111,7 @@ const RECIPES: Recipe[] = [
   },
   {
     id: "hamburger", emoji: "🍔", name: "햄버거",
-    tier: "하급", time: "즉시", sellPrice: 3192,
+    tier: "하급", time: "즉시", shopPrice: 2455, sellPrice: 3192,
     ingredients: [
       { id: "carrot_crop",  qty: 8 },
       { id: "beet_crop",    qty: 8 },
@@ -123,7 +124,7 @@ const RECIPES: Recipe[] = [
   // ── 상급 요리 (2시간 제작) — 판매가 높은 순 ──
   {
     id: "love-lunchbox", emoji: "❤️", name: "사랑의 도시락",
-    tier: "상급", time: "2시간", sellPrice: 1300000,
+    tier: "상급", time: "2시간", shopPrice: 1000000, sellPrice: 1300000,
     ingredients: [
       { id: "can_nether", qty: 3 },
       { id: "can_cocoa",  qty: 3 },
@@ -137,7 +138,7 @@ const RECIPES: Recipe[] = [
   },
   {
     id: "touching-lunchbox", emoji: "🥺", name: "정성의 도시락",
-    tier: "상급", time: "2시간", sellPrice: 403000,
+    tier: "상급", time: "2시간", shopPrice: 310000, sellPrice: 403000,
     ingredients: [
       { id: "carrot_drop", qty: 15 },
       { id: "potato_drop", qty: 15 },
@@ -305,6 +306,7 @@ function MaterialPriceSetter({
 function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string, string> }) {
   const tc = TIER_COLORS[recipe.tier];
   const [expanded, setExpanded] = useState(false);
+  const [priceMode, setPriceMode] = useState<"shop" | "max">("max");
   const [stock, setStock] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     recipe.ingredients.forEach(ing => { init[ing.id] = ""; });
@@ -321,7 +323,8 @@ function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string,
   });
 
   const totalCost = ingredientCosts.reduce((s, x) => s + x.cost, 0);
-  const profit = recipe.sellPrice - totalCost;
+  const activePrice = priceMode === "shop" ? recipe.shopPrice : recipe.sellPrice;
+  const profit = activePrice - totalCost;
   const profitPct = totalCost > 0 ? Math.round((profit / totalCost) * 100) : 0;
   const isProfitable = profit > 0;
   const hasZeroPrice = ingredientCosts.some(x => x.price === 0);
@@ -339,7 +342,7 @@ function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string,
   const hasAnyStock = recipe.ingredients.some(ing => (parseInt(stock[ing.id] ?? "", 10) || 0) > 0);
   const totalBatchProfit = maxBatch !== null && !hasZeroPrice ? maxBatch * Math.round(profit) : null;
   const totalBatchCost   = maxBatch !== null ? maxBatch * Math.round(totalCost) : null;
-  const totalBatchSell   = maxBatch !== null ? maxBatch * recipe.sellPrice : null;
+  const totalBatchSell   = maxBatch !== null ? maxBatch * activePrice : null;
 
   return (
     <div className={`bg-white border-2 rounded-2xl overflow-hidden transition-all hover:shadow-md ${
@@ -361,8 +364,20 @@ function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string,
               {recipe.tier} · {recipe.time}
             </span>
           </div>
-          <div className="text-slate-500 mt-0.5" style={{ fontSize: "12px" }}>
-            판매가 <span className="text-slate-700" style={{ fontWeight: 700 }}>{fmt(recipe.sellPrice)}원</span>
+          {/* 상점가 & 최대시세 표시 */}
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className="text-slate-400" style={{ fontSize: "11px" }}>
+              🏪 상점가 <span className="text-slate-600" style={{ fontWeight: 700 }}>{fmt(recipe.shopPrice)}원</span>
+            </span>
+            <span className="text-slate-300" style={{ fontSize: "10px" }}>|</span>
+            <span className="text-slate-400" style={{ fontSize: "11px" }}>
+              📈 최대시세 <span className="text-teal-600" style={{ fontWeight: 700 }}>{fmt(recipe.sellPrice)}원</span>
+            </span>
+            {/* 현재 계산 기준 뱃지 */}
+            <span className={`rounded-full px-2 py-0.5 ${priceMode === "shop" ? "bg-slate-200 text-slate-600" : "bg-teal-100 text-teal-600"}`}
+              style={{ fontSize: "9px", fontWeight: 700 }}>
+              {priceMode === "shop" ? "상점가 기준 계산중" : "최대시세 기준 계산중"}
+            </span>
           </div>
         </div>
 
@@ -434,23 +449,64 @@ function RecipeCard({ recipe, prices }: { recipe: Recipe; prices: Record<string,
               </p>
             </div>
           )}
-          <div className="flex items-center justify-between gap-2 mb-1.5">
+          <div className="flex items-center justify-between gap-2 mb-2">
             <span className="text-slate-500" style={{ fontSize: "12px" }}>총 재료비</span>
             <span className="text-slate-700" style={{ fontSize: "14px", fontWeight: 700 }}>{fmt(Math.round(totalCost))}원</span>
           </div>
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-slate-500" style={{ fontSize: "12px" }}>판매가</span>
-            <span className="text-slate-700" style={{ fontSize: "14px", fontWeight: 700 }}>{fmt(recipe.sellPrice)}원</span>
+
+          {/* 판매 기준 선택 버튼 */}
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            <button
+              onClick={() => setPriceMode("shop")}
+              className={`rounded-xl px-3 py-2.5 text-center transition-all duration-150 border-2 ${
+                priceMode === "shop"
+                  ? "bg-slate-700 border-slate-700 shadow-md"
+                  : "bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
+              }`}
+            >
+              <div className={priceMode === "shop" ? "text-slate-300" : "text-slate-400"} style={{ fontSize: "10px", fontWeight: 600 }}>
+                🏪 기본 상점가
+              </div>
+              <div className={priceMode === "shop" ? "text-white" : "text-slate-700"} style={{ fontSize: "13px", fontWeight: 700 }}>
+                {fmt(recipe.shopPrice)}원
+              </div>
+              {priceMode === "shop" && (
+                <div className="text-slate-300 mt-0.5" style={{ fontSize: "9px", fontWeight: 600 }}>▲ 선택됨</div>
+              )}
+            </button>
+            <button
+              onClick={() => setPriceMode("max")}
+              className={`rounded-xl px-3 py-2.5 text-center transition-all duration-150 border-2 ${
+                priceMode === "max"
+                  ? "bg-teal-600 border-teal-600 shadow-md"
+                  : "bg-teal-50 border-teal-100 hover:bg-teal-100 hover:border-teal-200"
+              }`}
+            >
+              <div className={priceMode === "max" ? "text-teal-100" : "text-teal-500"} style={{ fontSize: "10px", fontWeight: 600 }}>
+                📈 최대시세
+              </div>
+              <div className={priceMode === "max" ? "text-white" : "text-teal-700"} style={{ fontSize: "13px", fontWeight: 700 }}>
+                {fmt(recipe.sellPrice)}원
+              </div>
+              {priceMode === "max" && (
+                <div className="text-teal-100 mt-0.5" style={{ fontSize: "9px", fontWeight: 600 }}>▲ 선택됨</div>
+              )}
+            </button>
           </div>
 
           {!hasZeroPrice && (
             <div className={`flex items-center justify-between gap-2 rounded-xl px-4 py-3 ${
               isProfitable ? "bg-emerald-50 border border-emerald-100" : "bg-red-50 border border-red-100"
             }`}>
-              <span style={{ fontSize: "12.5px", fontWeight: 700 }}
-                className={isProfitable ? "text-emerald-700" : "text-red-700"}>
-                {isProfitable ? "✅ 수익" : "❌ 손해"}
-              </span>
+              <div>
+                <span style={{ fontSize: "12.5px", fontWeight: 700 }}
+                  className={isProfitable ? "text-emerald-700" : "text-red-700"}>
+                  {isProfitable ? "✅ 수익" : "❌ 손해"}
+                </span>
+                <div className={isProfitable ? "text-emerald-400" : "text-red-300"} style={{ fontSize: "10px", fontWeight: 600 }}>
+                  {priceMode === "shop" ? "기본 상점가 기준" : "최대시세 기준"}
+                </div>
+              </div>
               <span style={{ fontSize: "16px", fontWeight: 900 }}
                 className={isProfitable ? "text-emerald-700" : "text-red-600"}>
                 {isProfitable ? "+" : ""}{fmt(Math.round(profit))}원
@@ -615,13 +671,8 @@ function ProfitSummary({ prices }: { prices: Record<string, string> }) {
   }
 
   return (
-    <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-emerald-100 flex items-center gap-2">
-        <TrendingUp className="w-4 h-4 text-emerald-600" />
-        <span className="text-emerald-800" style={{ fontSize: "15px", fontWeight: 700 }}>수익 요약</span>
-      </div>
-      <div className="px-5 py-4">
-        <div className="grid grid-cols-3 gap-3 mb-4">
+    <div className="px-5 py-4">
+      <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="bg-white border border-emerald-100 rounded-xl p-3 text-center">
             <div className="text-emerald-700" style={{ fontSize: "20px", fontWeight: 900 }}>{profitable.length}개</div>
             <div className="text-slate-400 mt-0.5" style={{ fontSize: "11px" }}>수익 가능 요리</div>
@@ -656,7 +707,6 @@ function ProfitSummary({ prices }: { prices: Record<string, string> }) {
               </div>
             ))}
         </div>
-      </div>
     </div>
   );
 }
@@ -670,6 +720,7 @@ export function CookingCalculator() {
   });
 
   const [activeTier, setActiveTier] = useState<"하급" | "상급">("하급");
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const filteredRecipes = RECIPES.filter(r => r.tier === activeTier);
 
   return (
@@ -694,9 +745,29 @@ export function CookingCalculator() {
         <MaterialPriceSetter prices={prices} setPrices={setPrices} />
       </div>
 
-      {/* 수익 요약 */}
+      {/* 수익 요약 — 접힌 상태로 시작 */}
       <div className="mb-6">
-        <ProfitSummary prices={prices} />
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl overflow-hidden">
+          <button
+            onClick={() => setSummaryOpen(v => !v)}
+            className="w-full flex items-center gap-2 px-5 py-4 border-b border-emerald-100"
+          >
+            <TrendingUp className="w-4 h-4 text-emerald-600" />
+            <span className="text-emerald-800 flex-1 text-left" style={{ fontSize: "15px", fontWeight: 700 }}>수익 요약</span>
+            <ChevronDown className={`w-4 h-4 text-emerald-400 transition-transform duration-200 ${summaryOpen ? "rotate-180" : ""}`} />
+          </button>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateRows: summaryOpen ? "1fr" : "0fr",
+              transition: "grid-template-rows 0.22s ease",
+            }}
+          >
+            <div style={{ overflow: "hidden" }}>
+              <ProfitSummary prices={prices} />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 요리별 상세 */}
@@ -735,39 +806,34 @@ export function CookingCalculator() {
       <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm mb-4">
         <div className="px-5 py-4 border-b border-slate-50 flex items-center gap-2">
           <span className="text-lg">📋</span>
-          <span className="text-slate-700" style={{ fontSize: "15px", fontWeight: 700 }}>요리 판매가 참고표 (최대시세)</span>
+          <span className="text-slate-700" style={{ fontSize: "15px", fontWeight: 700 }}>요리 판매가 참고표</span>
+        </div>
+        {/* 헤더 행 */}
+        <div className="grid grid-cols-[1fr_auto_auto] gap-3 px-5 py-2 border-b border-slate-50 bg-slate-50/60">
+          <span className="text-slate-400" style={{ fontSize: "10.5px", fontWeight: 600 }}>요리</span>
+          <span className="text-slate-400 text-right" style={{ fontSize: "10.5px", fontWeight: 600 }}>🏪 기본 상점가</span>
+          <span className="text-teal-500 text-right" style={{ fontSize: "10.5px", fontWeight: 600 }}>📈 최대시세</span>
         </div>
         <div className="divide-y divide-slate-50">
           {[...RECIPES].sort((a, b) => b.sellPrice - a.sellPrice).map(r => {
             const tc = TIER_COLORS[r.tier];
-            const hasZero = r.ingredients.some(ing => {
-              const val = parseInt(prices[ing.id] ?? "0", 10);
-              return !val;
-            });
-            const buyProfit = hasZero ? null : Math.round(r.sellPrice - r.ingredients.reduce((s, ing) => {
-              const mat = getMat(ing.id);
-              return s + pricePerItem(parseInt(prices[ing.id] ?? "0", 10) || 0, mat) * ing.qty;
-            }, 0));
             return (
-              <div key={r.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50/50 transition-colors">
-                <span style={{ fontSize: "18px" }}>{r.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-slate-800" style={{ fontSize: "13px", fontWeight: 600 }}>{r.name}</span>
-                    <span className={`${tc.badge} rounded-full px-2 py-0.5`} style={{ fontSize: "10px", fontWeight: 600 }}>{r.tier}</span>
+              <div key={r.id} className="grid grid-cols-[1fr_auto_auto] gap-3 items-center px-5 py-3 hover:bg-slate-50/50 transition-colors">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span style={{ fontSize: "18px" }}>{r.emoji}</span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-slate-800" style={{ fontSize: "13px", fontWeight: 600 }}>{r.name}</span>
+                      <span className={`${tc.badge} rounded-full px-2 py-0.5`} style={{ fontSize: "10px", fontWeight: 600 }}>{r.tier}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="text-slate-600" style={{ fontSize: "13px", fontWeight: 700 }}>{fmt(r.sellPrice)}원</span>
-                  {buyProfit !== null ? (
-                    <span className={`rounded-full px-2.5 py-1 ${buyProfit > 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-500"}`}
-                      style={{ fontSize: "11px", fontWeight: 700 }}>
-                      {buyProfit > 0 ? "+" : ""}{fmt(buyProfit)}
-                    </span>
-                  ) : (
-                    <span className="bg-slate-100 text-slate-400 rounded-full px-2.5 py-1" style={{ fontSize: "11px" }}>-</span>
-                  )}
-                </div>
+                <span className="text-slate-500 text-right" style={{ fontSize: "13px", fontWeight: 600 }}>
+                  {fmt(r.shopPrice)}원
+                </span>
+                <span className="text-teal-700 text-right" style={{ fontSize: "13px", fontWeight: 700 }}>
+                  {fmt(r.sellPrice)}원
+                </span>
               </div>
             );
           })}
