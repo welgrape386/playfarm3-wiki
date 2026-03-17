@@ -10,22 +10,14 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 한국어 줄바꿈 — 어절 단위로 줄바꿈 (단어가 임의로 잘리지 않게) */
-html, body, .wiki-main {
-  word-break: keep-all;
-  overflow-wrap: break-word;
-  line-break: auto;
+/* ── number input 스핀 버튼 전역 제거 ──────────────────────────────────────── */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
-
-/* 숫자·영문 안의 줄바꿈은 break-all 허용하되 한글은 keep-all 유지 */
-.wiki-main p,
-.wiki-main span,
-.wiki-main div,
-.wiki-main li,
-.wiki-main td,
-.wiki-main th {
-  word-break: keep-all;
-  overflow-wrap: break-word;
+input[type=number] {
+  -moz-appearance: textfield;
 }
 
 /* ── 1. 섹션 간격: section 태그 및 wiki-section 클래스에 넉넉한 여백 ───────── */
